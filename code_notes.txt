@@ -1,10 +1,9 @@
-//npx create-expo-app -t expo-template-blank-typescript
-//cd notesAppv1
-//cls
-//npx expo install expo-file-system
-//----------------------------------------------------------------------------
+npx create-expo-app -t expo-template-blank-typescript
+cd notesAppv1
+cls
+npx expo install expo-file-system
+----------------------------------------------------------------------------
 
-/*
 import {useState , useEffect} from 'react'; 
 import {
 	StyleSheet, 
@@ -62,7 +61,28 @@ export default function App(){
 		}	
 	};
 
-	const handleDeleteNote = async (id: string) => {};
+	const renderNote = ({item}: {item: Note}) => (
+		<View style={styles.noteContainer}>
+			<Text>{item.text}</Text>
+			<Button 
+				title="Delete" 
+				onPress={() => handleDeleteNote(item.id)}
+			/>
+		</View>
+	);
+	
+	const handleDeleteNote = async (id: string) => {
+		const updatedNotes = notes.filter(note => note.id !== id);
+
+		try {
+			await FileSystem.writeAsStringAsync(FILE_PATH, JSON.stringify(updatedNotes));
+			setNotes(updatedNotes);
+
+		} catch (error) {
+			console.error('Error deleting note: ', error);
+		}
+		
+	};
 
 	return(
 		<View style={styles.container}>
@@ -76,19 +96,37 @@ export default function App(){
 			<FlatList 
 				data={notes}
 				keyExtractor={item => item.id}
-				renderItem={(item) => (
-					<View style={styles.noteContainer}>
-						<Text>{item.text}</Text>
-						<Button title="Delete" onPress={() => handleDeleteNote(item.id) } />
-					</View>
-				)}	
+				renderItem={renderNote}	
 			/>
 		</View>
 	);
 }
-*/
 
-/*
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 20, 
+  },
+  input: {
+    height: 40, 
+    borderColor: 'gray', 
+    borderWidth: 1, 
+    marginBottom: 10, 
+    paddingHorizontal: 10, 
+  },
+  noteContainer: {
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    padding: 10, 
+    borderBottomWidth: 1, 
+    borderBottomColor: 'gray',
+  },
+});
+
+------------------------------------------------------------------------------------
 ** Original Code **
 <FlatList 
   data={notes}
@@ -144,122 +182,3 @@ renderItem. The corrected approach uses object destructuring to correctly
 access the Note object properties, which aligns with TypeScript's expectations 
 for FlatList's renderItem function. This ensures that TypeScript can accurately 
 type-check your code and that your FlatList functions as expected.
-*/
-
-
-import React, { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  Button,
-  FlatList,
-  Alert
-} from 'react-native';
-import * as FileSystem from 'expo-file-system';
-
-const FILE_PATH = FileSystem.documentDirectory + 'notes.json';
-
-interface Note {
-  id: string;
-  text: string;
-}
-
-export default function App() {
-  const [note, setNote] = useState<string>('');
-  const [notes, setNotes] = useState<Note[]>([]);
-
-  const loadNotes = async () => {
-    try {
-      const fileInfo = await FileSystem.getInfoAsync(FILE_PATH);
-      if (fileInfo.exists) {
-        const fileContent = await FileSystem.readAsStringAsync(FILE_PATH);
-        setNotes(JSON.parse(fileContent));
-      }
-    } catch (error) {
-      console.error('Error loading notes', error);
-    }
-  };
-
-  useEffect(() => {
-    loadNotes();
-  }, []);
-
-  const handleAddNote = async () => {
-    if (!note.trim()) {
-      Alert.alert('Error', 'Note cannot be empty');
-      return;
-    }
-
-    const newNote: Note = { id: Date.now().toString(), text: note };
-    const updatedNotes = [...notes, newNote];
-
-    try {
-      await FileSystem.writeAsStringAsync(FILE_PATH, JSON.stringify(updatedNotes));
-      setNotes(updatedNotes);
-      setNote('');
-    } catch (error) {
-      console.error('Error saving note: ', error);
-    }
-  };
-
-  const handleDeleteNote = async (id: string) => {
-    // Handle deletion logic here
-    const updatedNotes = notes.filter(note => note.id !== id);
-
-    try {
-      await FileSystem.writeAsStringAsync(FILE_PATH, JSON.stringify(updatedNotes));
-      setNotes(updatedNotes);
-    } catch (error) {
-      console.error('Error deleting note:', error);
-    }
-  };
-
-  const renderItem = ({ item }: { item: Note }) => (
-    <View style={styles.noteContainer}>
-      <Text>{item.text}</Text>
-      <Button title="Delete" onPress={() => handleDeleteNote(item.id)} />
-    </View>
-  );
-
-  return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your note"
-        value={note}
-        onChangeText={setNote}
-      />
-      <Button title="Add Note" onPress={handleAddNote} />
-      <FlatList
-        data={notes}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 20, 
-  },
-  input: {
-    height: 40, 
-    borderColor: 'gray', 
-    borderWidth: 1, 
-    marginBottom: 10, 
-    paddingHorizontal: 10, 
-  },
-  noteContainer: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    padding: 10, 
-    borderBottomWidth: 1, 
-    borderBottomColor: 'gray',
-  },
-});
